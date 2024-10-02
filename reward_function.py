@@ -4816,10 +4816,14 @@ def the_one_under_test_4_outdoor (low_boundary, up_bundary, indoor_air_temp, cur
 
 def optimized_outdoor_diff(x):
     beta =1
-    delta=17.37
+    delta= 17.37
     return 1/(1+math.exp(-beta *(x-delta)))
 
+def optimized_outdoor_diff_delta (x, delta, season):
 
+    if season=='winter': beta =-1
+    else: beta =1
+    return 1/(1+math.exp(beta *(x-delta)))
 def reversed_optimized_outdoor_diff(x):
     beta = 1
     delta = 17.37
@@ -5000,6 +5004,58 @@ def the_one_under_test_outdoor (low_boundary, up_bundary, indoor_air_temp, curre
                 r_e = 0
                 s_ = 7
     return R_, r_t, r_e, current_indoor_state, thermal_weight, target, s_
+
+
+def the_one_under_test_outdoor_delta_ (low_boundary, up_bundary, indoor_air_temp, current_consumption, out_door_air, delta):
+    current_consumption_normalized = (current_consumption - energy_min) / (energy_max - energy_min)
+    season = 'winter'
+    # ref = (up_bundary + low_boundary) / 2
+    real_bound_up = 24
+    real_bound_down = 21
+
+    if (up_bundary > real_bound_up) and (low_boundary < real_bound_down):
+        wild_boundary = 1
+        if delta==0:
+            target = ((up_bundary + low_boundary) / 2)
+        else:
+            target =  low_boundary  #((up_bundary + low_boundary) / 2) - 1 #real_bound_down  #
+    else:
+        wild_boundary = 0
+        target = ((up_bundary + low_boundary) / 2)
+
+    outdoor_diff = abs(target - out_door_air)
+    diff_curr = abs(indoor_air_temp - target)
+
+
+    if (low_boundary < indoor_air_temp < up_bundary):
+        current_indoor_state = 1
+    else:
+        current_indoor_state = 0
+    thermal_weight = optimized_outdoor_diff_delta(outdoor_diff, delta, season)
+    if current_indoor_state == 1:
+
+        r_t = reward_(diff_curr)
+        r_e = 1 - current_consumption_normalized
+
+        energy_weight = 1 - thermal_weight
+        R_ = thermal_weight * r_t + (energy_weight) * r_e
+        s_ = 0
+
+    else:
+            if (low_boundary > indoor_air_temp):  # too low
+                r_t = penality_(diff_curr)
+                r_e = current_consumption_normalized - 1
+                energy_weight = 1 - thermal_weight
+                R_ = thermal_weight * r_t + (energy_weight) * r_e
+                s_ = 2
+            elif (up_bundary < indoor_air_temp):  # too high
+                r_t = penality_(diff_curr)
+                r_e = -current_consumption_normalized
+                energy_weight = 1 - thermal_weight
+                R_ = thermal_weight * r_t + (energy_weight) * r_e
+                s_ = 3
+    return R_, r_t, r_e, current_indoor_state, thermal_weight, target, s_
+
 
 def the_one_under_test_outdoor_comparsion_fixed (low_boundary, up_bundary, indoor_air_temp, current_consumption, out_door_air, energy_couption, apla):
     current_consumption_normalized = (current_consumption - energy_min) / (energy_max - energy_min)
@@ -5202,7 +5258,7 @@ def the_one_under_test_outdoor_for_cooling (low_boundary, up_bundary, indoor_air
             current_indoor_state = 0
 
     if current_indoor_state == 1:
-        thermal_weight = reversed_optimized_outdoor_diff(outdoor_diff)
+        thermal_weight = optimized_outdoor_diff(outdoor_diff)
         r_t = reward_(diff_curr)
         r_e = 1 - normalized_cooling
         energy_weight = 1 - thermal_weight
@@ -5210,7 +5266,7 @@ def the_one_under_test_outdoor_for_cooling (low_boundary, up_bundary, indoor_air
         s_ = 0
 
     else:
-        thermal_weight = reversed_optimized_outdoor_diff(outdoor_diff)
+        thermal_weight = optimized_outdoor_diff(outdoor_diff)
         if (wild_boundary == 0):  # [21, 24]
             if (low_boundary > indoor_air_temp):  # too low
                 r_t = penality_(diff_curr)
@@ -5249,6 +5305,86 @@ def the_one_under_test_outdoor_for_cooling (low_boundary, up_bundary, indoor_air
                 s_ = 7
     return R_, r_t, r_e, current_indoor_state, thermal_weight, target, s_
 
+
+
+def the_one_under_test_outdoor_for_cooling_detla (low_boundary, up_bundary, indoor_air_temp, cool_consumption, out_door_air, detla):
+    normalized_cooling = (cool_consumption - energy_min) / (energy_max - energy_min)
+    # normalized_heating = (heat_consumption - energy_min) / (energy_max - energy_min)
+    # normalized_all=(all_consumption - energy_min) / (energy_max - energy_min)
+    season='summer'
+    # ref = (up_bundary + low_boundary) / 2
+    real_bound_up = 24
+    real_bound_down = 21
+
+    if (up_bundary > real_bound_up) and (low_boundary < real_bound_down):
+        wild_boundary = 1
+        # target = real_bound_up  # ((up_bundary + low_boundary) / 2) - 1
+        target = up_bundary# ((up_bundary + low_boundary) / 2) +1
+    else:
+        wild_boundary = 0
+        target =  ((up_bundary + low_boundary) / 2)
+
+    outdoor_diff = abs(target - out_door_air)
+    diff_curr = abs(indoor_air_temp - target)
+
+    if (wild_boundary == 1):
+        if (low_boundary < indoor_air_temp < up_bundary):
+            current_indoor_state = 1
+        else:
+            current_indoor_state = 0
+    else:
+        if (real_bound_down < indoor_air_temp < real_bound_up):
+            current_indoor_state = 1
+        else:
+            current_indoor_state = 0
+
+    if current_indoor_state == 1:
+        thermal_weight = optimized_outdoor_diff_delta(outdoor_diff, detla,season)
+        r_t = reward_(diff_curr)
+        r_e = 1 - normalized_cooling
+        energy_weight = 1 - thermal_weight
+        R_ = thermal_weight * r_t + (energy_weight) * r_e
+        s_ = 0
+
+    else:
+        thermal_weight = optimized_outdoor_diff_delta(outdoor_diff, detla,season)
+        if (wild_boundary == 0):  # [21, 24]
+            if (low_boundary > indoor_air_temp):  # too low
+                r_t = penality_(diff_curr)
+                r_e = -normalized_cooling
+                energy_weight = 1 - thermal_weight
+                R_ = thermal_weight * r_t + (energy_weight) * r_e
+                s_ = 2
+            elif (up_bundary < indoor_air_temp):  # too high
+                r_t = penality_(diff_curr)
+                r_e = normalized_cooling-1
+                energy_weight = 1 - thermal_weight
+                R_ = thermal_weight * r_t + (energy_weight) * r_e
+                s_ = 3
+            else:
+                r_t = penality_(diff_curr)
+                R_ = r_t
+                r_e = 0
+                s_ = 4
+        else:  # [14, 30]
+            if (real_bound_down >= indoor_air_temp):  # too low
+                r_t = penality_(diff_curr)
+                r_e = -normalized_cooling
+                energy_weight = 1 - thermal_weight
+                R_ = thermal_weight * r_t + (energy_weight) * r_e
+                s_ = 5
+            elif (real_bound_up < indoor_air_temp):  # too high
+                r_t = penality_(diff_curr)
+                r_e = normalized_cooling-1
+                energy_weight = 1 - thermal_weight
+                R_ = thermal_weight * r_t + (energy_weight) * r_e
+                s_ = 6
+            else:
+                r_t = penality_(diff_curr)
+                R_ = r_t
+                r_e = 0
+                s_ = 7
+    return R_, r_t, r_e, current_indoor_state, thermal_weight, target, s_
 
 def the_one_under_test_outdoor_for_cooling_fixed (low_boundary, up_bundary, indoor_air_temp, cool_consumption, out_door_air, alpa):
     normalized_cooling = (cool_consumption - energy_min) / (energy_max - energy_min)

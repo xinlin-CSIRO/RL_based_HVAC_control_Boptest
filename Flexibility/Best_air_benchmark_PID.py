@@ -84,7 +84,7 @@ env = BoptestGymEnvCustomReward(url                   = url,
                                 random_start_time     = False,
                                 predictive_period  =0,
                                 start_time=start_date * 24 * 3600,
-                                step_period = (60/time_resolution) * 60,####7.5 *60????????
+                                step_period = (60/4) * 60,####7.5 *60????????
                                 warmup_period  = 10*24*3600,
                                 scenario=test_typo,
                                 max_episode_length    = _n_days_*24*3600,
@@ -114,8 +114,8 @@ class SampleModel(object):
     def predict(self,obs, deterministic=True):
         return self.env.action_space.sample(), obs
 
-# learning_steps= int(2400) #learning_steps_()
-test_steps= int(14*24) #test_steps_()
+learning_steps= int(2400) #learning_steps_()
+test_steps= int(14*24*4) #test_steps_()
 
 
 

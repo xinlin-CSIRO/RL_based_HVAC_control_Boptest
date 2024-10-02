@@ -6,11 +6,11 @@ import math
 from gym import spaces
 from stable_baselines3 import DDPG
 from datetime import datetime, date
-from reward_function import reward_function_w_flexibility_peak_heat,the_one_under_test_outdoor, the_one_under_test_outdoor_for_cooling, reward_function_w_flexibility_2,reward_function_w_flexibility_3
+from reward_function import reward_function_w_flexibility_peak_heat,the_one_under_test_outdoor_for_cooling_detla, the_one_under_test_outdoor_for_cooling, reward_function_w_flexibility_2,the_one_under_test_outdoor_delta_
 from boptestGymEnv import NormalizedObservationWrapper
 os.chdir(r"/")
 from boptestGymEnv import BoptestGymEnv, DiscretizedActionWrapper
-from wrapper_xinlin import DiscretizedActionWrapper_xinlin_,ContinuousActionWrapper_xinlin
+from wrapper_xinlin import DiscretizedActionWrapper_xinlin_,ContinuousActionWrapper_xinlin,ContinuousActionWrapper_xinlin_single_action
 from learning_paras import learning_steps_,test_steps_,learning_rate_,learning_starts_,batch_size_,start_time_
 from gymnasium.spaces import MultiDiscrete
 url = 'https://api.boptest.net'
@@ -33,11 +33,12 @@ _n_days_=300
 test_typo='peak_cool_day' #'peak_cool_day' #'typical_heat_day' #'peak_heat_day'
 now = datetime.now()
 current_time= now.strftime("%dth-%b-%H-%M")
-result_learning = "C:\\Users\\wan397\\OneDrive - CSIRO\\Desktop\\RL_WORK_SUMMARY\\Best+heat_to_Best_air_"+test_typo+'_'+current_time+"_dual_action.csv"
+delta=0
+result_learning = "C:\\Users\\wan397\\OneDrive - CSIRO\\Desktop\\RL_WORK_SUMMARY\\Best_air_"+current_time+"_"+test_typo+"_delta="+str(delta)+".csv"
 
 f_1 = open(result_learning, "w+")
 # f_2 = open(result_testing, "w+")  #str(indoor_air_temp) + ','+ str(action_)+','+str(reward)+','+ str(energy_r) + ',' + str(thermal_r) + ',' + str(current_consumption) + ',' +    str(energy_usage_kpi) +','+','+str(thermal_kpi)+'\n'
-record='indoor_temp,boundary_0,boundary_1,action_0, action_1,reward, thermal_r, energy_r,themal_kpi,energy_kpi,cost_kpi,outdoor_air,scenario,ref,cool_consumption,heating consumption,fan consumption\n'
+record='indoor_temp,boundary_0,boundary_1,action_0, weight,reward, thermal_r, energy_r,themal_kpi,energy_kpi,cost_kpi,outdoor_air,scenario,ref,cool_consumption,heating consumption,fan consumption\n'
 f_1.write(record)
 f_1.close()
 # f_2.write(record)
@@ -83,13 +84,9 @@ class BoptestGymEnvCustomReward(BoptestGymEnv):
 
 
         action_0 = action[0] - 273.15
-        action_1 = action[1] - 273.15
 
 
-        # all_consumption = cool_consumption + heat_consumption #+ fan_consumption
-
-
-        R_, r_t, r_e, current_indoor_state, thermal_weight, target, scenario = the_one_under_test_outdoor_for_cooling (low_boundary, up_bundary, indoor_air_temp, cool_consumption, out_door_air)
+        R_, r_t, r_e, current_indoor_state, thermal_weight, target, scenario = the_one_under_test_outdoor_for_cooling_detla (low_boundary, up_bundary, indoor_air_temp, cool_consumption, out_door_air, delta)
         ###############################################################
 
         kpis = requests.get('{0}/kpi/{1}'.format(self.url, self.testid)).json()['payload']
@@ -99,7 +96,7 @@ class BoptestGymEnvCustomReward(BoptestGymEnv):
         cost_kpi = kpis['cost_tot']
         # print('kpi=',energy_usage_kpi)
         result_sting = str(indoor_air_temp) + ',' + str(low_boundary) + ',' + str(up_bundary) + ',' + str(
-            action_0) + ',' + str(action_1) + ',' + str(R_) + ',' + str(r_t) + ',' + str(r_e) + ',' + str(
+            action_0) + ',' + str(thermal_weight) + ',' + str(R_) + ',' + str(r_t) + ',' + str(r_e) + ',' + str(
             thermal_kpi) + ',' + str(energy_usage_kpi) + ',' + str(cost_kpi) + ',' + str(out_door_air) + ',' + str(
             scenario) + ',' + str(target) + \
                        ',' + str(cool_consumption) + ',' + str(fan_consumption)    + '\n'
@@ -118,7 +115,7 @@ elif test_typo=='peak_cool_day':
 env = BoptestGymEnvCustomReward(url                   = url,
                                 testcase              = 'bestest_air', #'bestest_hydronic_heat_pump',
                                 actions               = {
-                                                            'con_oveTSetHea_u':(288.15, 296.15), #(15, 23)
+                                                            # 'con_oveTSetHea_u':(288.15, 296.15), #(15, 23)
                                                             'con_oveTSetCoo_u':(296.15, 303.15),
                                                             # 'fcu_oveTSup_u':(288.15, 303.15)
                                                          },
@@ -135,7 +132,8 @@ env = BoptestGymEnvCustomReward(url                   = url,
                                 random_start_time     = False,
                                 predictive_period  =0,
                                 start_time=start_date * 24 * 3600,
-                                step_period= 15 * 60,
+                                step_period= 30 * 60,
+                                # step_period= 7.5 * 60,
                                 warmup_period  = 10*24*3600,
                                 scenario=test_typo,
                                 max_episode_length    = _n_days_*24*3600,
@@ -146,7 +144,7 @@ from gymnasium.wrappers import NormalizeObservation
 
 env = NormalizeObservation(env) # dont need it if only indoor air is considered
 
-env = ContinuousActionWrapper_xinlin(env)
+env = ContinuousActionWrapper_xinlin_single_action (env)
 # env = DiscretizedObservationWrapper(env, n_bins_obs=5, outs_are_bins=True)
 print('Action space of the wrapped agent:')
 print(env.action_space)
@@ -183,7 +181,7 @@ batch_size_p=batch_size_()
 #             )
 #
 # model = A2C('MlpPolicy', env, learning_rate=0.1, n_steps=1,ent_coef=0.2  )
-model = SAC("MlpPolicy", env, learning_rate=0.001, batch_size =24,  ent_coef=0.2 ) # ent_coef=0.2
+model = SAC("MlpPolicy", env, learning_rate=0.001, batch_size =24,  ent_coef='auto' ) # ent_coef=0.2
 
 
 learning_steps=  int(2400) #learning_steps_()

@@ -26,7 +26,7 @@ gs = gridspec.GridSpec(1, 2, figure=fig)
 # fig.suptitle(r'Dynamic thermal weight $\alpha(t)$ V.S. fixed thermal weight $\alpha$=0.5',y=0.915)  # Set a title for the whole figure
 
 ax1 = fig.add_subplot(gs[0, 0])  # This adds a subplot that spans the first row entirely
-ax1.set_title(r'Winter seasons ($\beta=-1, \delta=17.5$)', fontsize=28)
+ax1.set_title(r'Winter seasons ($\beta=-1, \delta=17.5^{\circ}\mathrm{C}$)', fontsize=28)
 ax1.plot(out_temp, alpha_winter_day, 'b', label=r'$\alpha(t)$ for occupied period', linewidth=4)
 
 ref_night_winter=15*np.ones(100)
@@ -41,7 +41,7 @@ ax1.grid(True)
 out_temp_summer = np.linspace(-10, 30, 100)
 alpha_summer_day = alpha(out_temp_summer, ref_day, beta_summer, delta)
 ax2 = fig.add_subplot(gs[0, 1])  # This adds a subplot that spans the first row entirely
-ax2.set_title(r'Summer seasons ($\beta=1, \delta=17.5$)', fontsize=28)
+ax2.set_title(r'Summer seasons ($\beta=1, \delta=17.5^{\circ}\mathrm{C}$)', fontsize=28)
 ax2.plot(out_temp_summer, alpha_summer_day, 'g', label=r'$\alpha(t)$ for occupied period', linewidth=4)
 
 out_temp_summer = np.linspace(-10, 30, 100)

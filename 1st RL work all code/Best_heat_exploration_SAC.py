@@ -99,7 +99,7 @@ env = BoptestGymEnvCustomReward(url                   = url,
 
                                 random_start_time=False,
                                 predictive_period=0,
-                                step_period = int(30/time_resolution) * 60,####7.5 *60????????
+                                step_period = int(15/time_resolution) * 60,#30,60,...
                                 start_time=start_date * 24 * 3600,
                                 max_episode_length    = _n_days_*24*3600,
                                 warmup_period=3 * 24 * 3600,

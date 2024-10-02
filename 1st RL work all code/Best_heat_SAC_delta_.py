@@ -6,7 +6,7 @@ import math
 from gym import spaces
 from stable_baselines3 import DDPG
 from datetime import datetime, date
-from reward_function import the_one_under_test_1,the_one_under_test_1025_best,the_one_under_test_1_refined,the_one_under_test_2_refined,the_one_under_test_1_further,the_one_under_test_outdoor,the_one_under_test_outdoor_2
+from reward_function import the_one_under_test_1,the_one_under_test_outdoor_delta_,the_one_under_test_1_refined,the_one_under_test_2_refined,the_one_under_test_1_further,the_one_under_test_outdoor,the_one_under_test_outdoor_2
 from boptestGymEnv import NormalizedObservationWrapper
 os.chdir(r"/")
 from boptestGymEnv import BoptestGymEnv, DiscretizedActionWrapper
@@ -24,11 +24,12 @@ excluding_periods = [(79*24*3600, 355*24*3600)]
 
 # Instantite environment
 energy_consumption_up_bond=4000
-_n_days_=300
+_n_days_=100
 test_scenario = 'peak_heat_day' #'peak_heat_day'
 now = datetime.now()
 current_time= now.strftime("%dth-%b-%H-%M")
-result_learning = "C:\\Users\\wan397\\OneDrive - CSIRO\\Desktop\\RL_WORK_SUMMARY\\Best_heat_our_method_"+current_time+"_"+test_scenario+"auto_.csv"
+delta=0
+result_learning = "C:\\Users\\wan397\\OneDrive - CSIRO\\Desktop\\RL_WORK_SUMMARY\\Best_heat_"+current_time+"_"+test_scenario+"_delta="+str(delta)+".csv"
 
 f_1 = open(result_learning, "w+")
 # f_2 = open(result_testing, "w+")  #str(indoor_air_temp) + ','+ str(action_)+','+str(reward)+','+ str(energy_r) + ',' + str(thermal_r) + ',' + str(current_consumption) + ',' +    str(energy_usage_kpi) +','+','+str(thermal_kpi)+'\n'
@@ -56,12 +57,12 @@ class BoptestGymEnvCustomReward(BoptestGymEnv):
         action_ = action[0] - 273.15
         # energy_couption.append(heat_consumption)
 
-        R_, r_t, r_e, current_indoor_state, thermal_weight, target, scenario = the_one_under_test_outdoor  (low_boundary,
+        R_, r_t, r_e, current_indoor_state, thermal_weight, target, scenario = the_one_under_test_outdoor_delta_  (low_boundary,
                                                                                                    up_bundary,
                                                                                                    indoor_air_temp,
                                                                                                    heat_consumption,
                                                                                                    out_door_air,
-                                                                                                   energy_couption,
+                                                                                                   delta
                                                                                                    )
         kpis = requests.get('{0}/kpi/{1}'.format(self.url, self.testid)).json()['payload']
         # Calculate objective integrand function as the total discomfort
@@ -128,10 +129,10 @@ from stable_baselines3 import DQN,A2C, PPO, SAC
 learning_rates_p=learning_rate_()
 learning_start_p=learning_starts_()
 batch_size_p=batch_size_()
-
+# ent_coef='auto'
 model = SAC("MlpPolicy", env, learning_rate=0.001, batch_size = 96,  ent_coef='auto')
 
-learning_steps = int(1*time_resolution*24*100) # (3 weeks--> 5 weeks....)
+learning_steps = int(1*time_resolution*24*_n_days_) # (3 weeks--> 5 weeks....)
 test_steps = int(1*time_resolution*24*(ahead_period+14))
 
 print('Learning process is started')
@@ -142,17 +143,11 @@ print('Learning process is completed')
 done = False
 obs= env.reset()
 
-
-for x in range(0, int(test_steps)):
+for x in range(0, test_steps):
   action, _ = model.predict(obs, deterministic=True) # c
   obs, reward, terminated, info = env.step(action)
-  if x % 10 == 0:
+  if x % 10 ==0:
       print("current step:", x)
-      kpis = env.get_kpis()
-      energy_usage_kpi = kpis['ener_tot']
-      thermal_kpi = kpis['tdis_tot']
-      print('energy kpi=', energy_usage_kpi)
-      print('thermal discomfort kpi=', thermal_kpi)
 
 kpis = env.get_kpis()
 energy_usage_kpi = kpis['ener_tot']
@@ -161,7 +156,7 @@ print('kpi=', energy_usage_kpi)
 print(kpis)
 
 f_1 = open(result_learning, "a+")
-f_1.write(str(energy_usage_kpi))
+f_1.write(str(kpis))
 f_1.close()
 
 now = datetime.now()
