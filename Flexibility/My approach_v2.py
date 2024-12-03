@@ -52,7 +52,6 @@ f_1.close()
 Last_energy_usage_kpi=0
 counter_x=0
 class BoptestGymEnvCustomReward(BoptestGymEnv):
-
     def compute_reward(self, action):
         # a= self.actions
         u = {}
@@ -106,9 +105,6 @@ class BoptestGymEnvCustomReward(BoptestGymEnv):
         f_1.close()
         return R_
 
-
-
-
 # start_to_train=start_date-100
 env = BoptestGymEnvCustomReward(url                   = url,
                                 testcase              = 'bestest_air', #'bestest_hydronic_heat_pump',
@@ -128,8 +124,6 @@ env = BoptestGymEnvCustomReward(url                   = url,
                                                         'LowerSetp[1]': (280., 310.),
                                                         'UpperSetp[1]': (280., 310.),
                                                         'PriceElectricPowerDynamic': (0., 1.),
-                                                        # 'nTot':(0., 1.)
-                                                        # 'Occupancy[1]':(0., 2.),# occupancy
                                                          },
 
                                 random_start_time     = False,
@@ -155,14 +149,10 @@ print(env.action_space)
 print('observation space of the wrapped agent:')
 print(env.observation_space)
 
-
-
 from stable_baselines3 import DQN,A2C, PPO, SAC, DDPG
 
-
 model = SAC("MlpPolicy", env, learning_rate=0.0003, batch_size =int(128*time_resolution),  ent_coef=_ent_coef_,learning_starts=2000  ) # ent_coef=0.2
-# model = SAC("MlpPolicy", env, learning_rate=0.0005, batch_size =int(24*time_resolution),  ent_coef=_ent_coef_ ) # ent_coef=0.2
-# model = DDPG("MlpPolicy", env, learning_rate=0.0003, batch_size =int(128*time_resolution),learning_starts=500 ) # ent_coef=0.2
+
 
 learning_steps = int(1*time_resolution*24*_n_days_) # (3 weeks--> 5 weeks....)
 test_steps = int(1*time_resolution*24*(ahead_period+14))

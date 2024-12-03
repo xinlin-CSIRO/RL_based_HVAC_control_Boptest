@@ -149,7 +149,7 @@ energy_kpi_our_approach = np.array(our_method2['energy_kpi'][head:end]).astype(f
 file2 = "C:\\Users\\wan397\\OneDrive - CSIRO\\Desktop\\RL_WORK_SUMMARY\\2025 Conference\\all_results_in_one.xlsx"
 #
 our_method2_w = pd.read_excel(file2, 'Peak_cool_our')
-step_rewards_2=np.array(our_method2_w['reward'][0:9500]).astype(float)+ 1*np.ones(9500)
+step_rewards_2=np.array(our_method2_w['reward'][0:9500]).astype(float) #+ 1*np.ones(9500)
 
 fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(10, 15), constrained_layout=True)
 

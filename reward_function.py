@@ -4938,7 +4938,7 @@ def the_one_under_test_outdoor (low_boundary, up_bundary, indoor_air_temp, curre
     diff_curr = abs(indoor_air_temp - target)
 
     if (wild_boundary == 1):
-        if (real_bound_down < indoor_air_temp < real_bound_up):
+        if (low_boundary < indoor_air_temp < up_bundary):
             current_indoor_state = 1
         else:
             current_indoor_state = 0
